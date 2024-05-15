@@ -50,6 +50,31 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q_eulerian.h>
 
+// MPI-related headers ---------------------------------------------------------
+#define FORCE_USE_OF_TRILINOS
+
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/index_set.h>
+#include <deal.II/base/utilities.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/lac/generic_linear_algebra.h>
+#include <deal.II/lac/sparsity_tools.h>
+
+namespace LA
+{
+#if defined(DEAL_II_WITH_PETSC) && !defined(DEAL_II_PETSC_WITH_COMPLEX) && \
+  !(defined(DEAL_II_WITH_TRILINOS) && defined(FORCE_USE_OF_TRILINOS))
+  using namespace dealii::LinearAlgebraPETSc;
+#  define USE_PETSC_LA
+#elif defined(DEAL_II_WITH_TRILINOS)
+  using namespace dealii::LinearAlgebraTrilinos;
+#else
+#  error DEAL_II_WITH_PETSC or DEAL_II_WITH_TRILINOS required
+#endif
+} // namespace LA
+//-----------------------------------------------------------------------------
+
 #include <deal.II/lac/block_sparse_matrix.h>
 #include <deal.II/lac/block_vector.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
@@ -1608,10 +1633,14 @@ namespace Flexodeal
     void run();
 
   private:
-    // In the private section of this class, we first forward declare a number
-    // of objects that are used in parallelizing work using the WorkStream
-    // object (see the @ref threads module for more information on this).
-    //
+    // First we start with some MPI-related variables
+    MPI_Comm mpi_communicator;
+    const unsigned int n_mpi_processes;
+    const unsigned int this_mpi_process;
+    mutable ConditionalOStream pcout;
+
+    // Then, we forward declare a number of objects that are used in 
+    // parallelizing work the work.
     // We declare such structures for the computation of tangent (stiffness)
     // matrix and right hand side vector, static condensation, and for updating
     // quadrature points:
@@ -1863,7 +1892,11 @@ namespace Flexodeal
   Solid<dim>::Solid(const std::string &input_file,
                     const std::string &strain_file,
                     const std::string &activation_file)
-    : parameters(input_file)
+    : mpi_communicator(MPI_COMM_WORLD)
+    , n_mpi_processes(Utilities::MPI::n_mpi_processes(mpi_communicator))
+    , this_mpi_process(Utilities::MPI::this_mpi_process(mpi_communicator))
+    , pcout(std::cout, this_mpi_process == 0)
+    , parameters(input_file)
     , vol_reference(0.)
     , triangulation(Triangulation<dim>::maximum_smoothing)
     , time(parameters.end_time, parameters.delta_t)
@@ -1983,6 +2016,15 @@ namespace Flexodeal
               << "             F L E X O D E A L  ( L I T E )             " << "\n"
               << "                                                        " << "\n"
               << "--------------------------------------------------------" << "\n" << std::endl;
+
+    pcout << "Running in parallel with "
+#ifdef USE_PETSC_LA
+          << "PETSc"
+#else
+          << "Trilinos"
+#endif
+          << " on " << Utilities::MPI::n_mpi_processes(mpi_communicator)
+          << " MPI rank(s)...\n" << std::endl;
 
     // Create directory to store all the outputs
     if (mkdir(save_dir, 0777) == -1)
@@ -5139,6 +5181,8 @@ int main(int argc, char* argv[])
 {
   using namespace Flexodeal;
 
+  Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv);
+
   try
     {
       // The program only works for dim = 3. 
@@ -5167,29 +5211,35 @@ int main(int argc, char* argv[])
     }
   catch (std::exception &exc)
     {
-      std::cerr << std::endl
-                << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
-      std::cerr << "Exception on processing: " << std::endl
-                << exc.what() << std::endl
-                << "Aborting!" << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
+      if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      {
+        std::cerr << std::endl
+                  << std::endl
+                  << "----------------------------------------------------"
+                  << std::endl;
+        std::cerr << "Exception on processing: " << std::endl
+                  << exc.what() << std::endl
+                  << "Aborting!" << std::endl
+                  << "----------------------------------------------------"
+                  << std::endl;
 
-      return 1;
+        return 1;
+      }
     }
   catch (...)
     {
-      std::cerr << std::endl
-                << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
-      std::cerr << "Unknown exception!" << std::endl
-                << "Aborting!" << std::endl
-                << "----------------------------------------------------"
-                << std::endl;
-      return 1;
+      if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      {
+        std::cerr << std::endl
+                  << std::endl
+                  << "----------------------------------------------------"
+                  << std::endl;
+        std::cerr << "Unknown exception!" << std::endl
+                  << "Aborting!" << std::endl
+                  << "----------------------------------------------------"
+                  << std::endl;
+        return 1;
+      }
     }
 
   return 0;
