@@ -358,7 +358,7 @@ namespace Flexodeal
     {
       std::string type_lin;
       double      tol_lin;
-      double      max_iterations_lin;
+      int         max_iterations_lin;
       bool        use_static_condensation;
       std::string preconditioner_type;
       double      preconditioner_relaxation;
@@ -412,7 +412,7 @@ namespace Flexodeal
       {
         type_lin                  = prm.get("Solver type");
         tol_lin                   = prm.get_double("Residual");
-        max_iterations_lin        = prm.get_double("Max iteration multiplier");
+        max_iterations_lin        = prm.get_integer("Max iteration multiplier");
         use_static_condensation   = prm.get_bool("Use static condensation");
         preconditioner_type       = prm.get("Preconditioner type");
         preconditioner_relaxation = prm.get_double("Preconditioner relaxation");
