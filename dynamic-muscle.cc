@@ -1686,9 +1686,7 @@ namespace Flexodeal
   class Solid
   {
   public:
-    Solid(const std::string &input_file,
-          const std::string &strain_file,
-          const std::string &activation_file);
+    Solid(const std::map<std::string, std::string> &args);
 
     void run();
 
@@ -1810,6 +1808,7 @@ namespace Flexodeal
 
     // Finally, some member variables that describe the current state: A
     // collection of the parameters used to describe the problem setup...
+    std::map<std::string, std::string> varargs;
     Parameters::AllParameters parameters;
 
     // ...the volume of the reference configuration...
@@ -1949,16 +1948,15 @@ namespace Flexodeal
 
   // We initialize the Solid class using data extracted from the parameter file.
   template <int dim>
-  Solid<dim>::Solid(const std::string &input_file,
-                    const std::string &strain_file,
-                    const std::string &activation_file)
-    : parameters(input_file)
+  Solid<dim>::Solid(const std::map<std::string, std::string> &args)
+    : varargs(args)
+    , parameters(varargs.at("-PARAMETERS"))
     , vol_reference(0.)
     , triangulation(Triangulation<dim>::maximum_smoothing)
     , time(parameters.end_time, parameters.delta_t)
     , timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
-    , u_dir(strain_file)
-    , activation_function(activation_file)
+    , u_dir(varargs.at("-BDY_STRAIN"))
+    , activation_function(varargs.at("-ACTIVATION"))
     , degree(parameters.poly_degree)
     ,
     // The Finite Element System is composed of dim continuous displacement
@@ -1989,55 +1987,62 @@ namespace Flexodeal
   {
     Assert(dim == 2 || dim == 3,
            ExcMessage("This problem only works in 2 or 3 space dimensions."));
+
     determine_component_extractors();
 
-    // Initialize save_dir first with the current timestamp.
-    std::chrono::system_clock::time_point time_now;
-    time_t time_conv;
-    struct tm* timeinfo;
-
-    time_now = std::chrono::system_clock::now();
-    time_conv = std::chrono::system_clock::to_time_t(time_now);
-    timeinfo = localtime(&time_conv);
-    strftime(save_dir,80,"%Y%m%d_%H%M%S",timeinfo);
-
-    // Then, we append to the timestamp some letters to
-    // quickly visualize the type of simulation that we just
-    // performed:
-
-    // Append _Q or _D depending on the type of simulation
-    if (parameters.type_of_simulation == "quasi-static")
-      strcat(save_dir, "_Q");
-    else if (parameters.type_of_simulation == "dynamic")
-      strcat(save_dir, "_D");
-
-    // Append nonlinear solver info
-    if (parameters.type_nonlinear_solver == "classicNewton")
-      strcat(save_dir, "C");
-    else if (parameters.type_nonlinear_solver == "acceleratedNewton")
-      strcat(save_dir, "A");
-
-    // Append linear solver info
-    if (parameters.type_lin == "CG")
-      strcat(save_dir, "C");
-    else if (parameters.type_lin == "GMRES")
-      strcat(save_dir, "G");
-    else if (parameters.type_lin == "Direct")
-      strcat(save_dir, "D");
-    
-    // Append preconditioner info
-    if (parameters.type_lin == "Direct")
-      strcat(save_dir, "X");
-    else if (parameters.preconditioner_type == "ssor" && parameters.type_lin != "Direct")
-      strcat(save_dir, "S");
-    else if (parameters.preconditioner_type == "jacobi" && parameters.type_lin != "Direct")
-      strcat(save_dir, "J");
-
-    // Static condensation?
-    if (parameters.use_static_condensation)
-      strcat(save_dir, "T");
+    // Initialize save_dir with -OUTPUT_DIR if provided,
+    // otherwise use current timestamp as folder name
+    if (!varargs.at("-OUTPUT_DIR").empty())
+      strcpy(save_dir, varargs.at("-OUTPUT_DIR").c_str());
     else
-      strcat(save_dir, "F");
+    {
+      std::chrono::system_clock::time_point time_now;
+      time_t time_conv;
+      struct tm* timeinfo;
+
+      time_now = std::chrono::system_clock::now();
+      time_conv = std::chrono::system_clock::to_time_t(time_now);
+      timeinfo = localtime(&time_conv);
+      strftime(save_dir,80,"%Y%m%d_%H%M%S",timeinfo);
+
+      // Then, we append to the timestamp some letters to
+      // quickly visualize the type of simulation that we just
+      // performed:
+
+      // Append _Q or _D depending on the type of simulation
+      if (parameters.type_of_simulation == "quasi-static")
+        strcat(save_dir, "_Q");
+      else if (parameters.type_of_simulation == "dynamic")
+        strcat(save_dir, "_D");
+
+      // Append nonlinear solver info
+      if (parameters.type_nonlinear_solver == "classicNewton")
+        strcat(save_dir, "C");
+      else if (parameters.type_nonlinear_solver == "acceleratedNewton")
+        strcat(save_dir, "A");
+
+      // Append linear solver info
+      if (parameters.type_lin == "CG")
+        strcat(save_dir, "C");
+      else if (parameters.type_lin == "GMRES")
+        strcat(save_dir, "G");
+      else if (parameters.type_lin == "Direct")
+        strcat(save_dir, "D");
+      
+      // Append preconditioner info
+      if (parameters.type_lin == "Direct")
+        strcat(save_dir, "X");
+      else if (parameters.preconditioner_type == "ssor" && parameters.type_lin != "Direct")
+        strcat(save_dir, "S");
+      else if (parameters.preconditioner_type == "jacobi" && parameters.type_lin != "Direct")
+        strcat(save_dir, "J");
+
+      // Static condensation?
+      if (parameters.use_static_condensation)
+        strcat(save_dir, "T");
+      else
+        strcat(save_dir, "F");
+    }
   }
 
 
@@ -5245,37 +5250,63 @@ int main(int argc, char* argv[])
 {
   using namespace Flexodeal;
 
+  // Declare a map to store key-value pairs from argv
+  std::map<std::string, std::string> args;
+
+  // Store default values
+  args["-PARAMETERS"] = "parameters.prm";
+  args["-BDY_STRAIN"] = "control_points_strain.dat";
+  args["-ACTIVATION"] = "control_points_activation.dat";
+  args["-OUTPUT_DIR"] = "";
+
+  // Modify default values according to input
+  {
+    // Loop through the command-line arguments
+    for (int i = 1; i < argc; ++i) {
+      std::string arg = argv[i];
+
+      // Check if the argument starts with a dash '-'
+      if (arg[0] != '-')
+        throw std::invalid_argument("Invalid argument (does not start with '-'): " + arg);
+
+      // Check if the argument contains '=' (i.e., key-value pair)
+      size_t pos = arg.find('=');
+
+      // Extract key from argument
+      std::string key = arg.substr(0, pos);
+
+      // Verify that the key is valid
+      auto it = args.find(key);
+      if (it == args.end())
+      {
+        std::cout << "Supported arguments: ";
+        for (const auto& pair : args)
+          std::cout << pair.first << " ";
+        std::cout << std::endl;
+        
+        throw std::invalid_argument("Unsupported argument: " + key);
+      }
+
+      // If argument contains "=", insert key-value pair,
+      // otherwise throw an exception.
+      if (pos != std::string::npos) 
+      {
+        // Extract value from argument
+        std::string value = arg.substr(pos + 1);
+        args[key] = value;
+      } 
+      else
+        throw std::invalid_argument("Missing argument: " + key);
+    }
+  }
+
   try
     {
       // The program only works for dim = 3. 
       // Maybe one day will also work for dim = 2 ...
       const unsigned int dim = 3;
-      std::string parameters_file, strain_file, activation_file;
-      
-      if (argc == 1)
-      {
-        // If no extra arguments are given (such as when calling "make run" 
-        // or just "./dynamic-muscle"), then the following files are
-        // considered by default:
-        parameters_file = "parameters.prm";
-        strain_file     = "control_points_strain.dat";
-        activation_file = "control_points_activation.dat";
-        
-        // Caution must be taken when using files that are different from
-        // these default values. Whatever name you use for these files,
-        // the order must be preserved. 
-        //
-        // Remember: public service announcement, PSA (parameters, strain, 
-        // activation)! Credits to Kshitij Patil for the acronym :)
-      } 
-      else
-      {
-        parameters_file = argv[1];
-        strain_file     = argv[2];
-        activation_file = argv[3];
-      }
 
-      Solid<dim>  solid(parameters_file, strain_file, activation_file);
+      Solid<dim>  solid(args);
       solid.run();
     }
   catch (std::exception &exc)
