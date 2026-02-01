@@ -42,7 +42,19 @@ This coding framework has been used in the following studies:
     - In release mode: ```cmake . -DCMAKE_BUILD_TYPE=Release -DDEAL_II_DIR=<path/to/deal.II>```.
     - In debug mode: ```cmake . -DCMAKE_BUILD_TYPE=Debug -DDEAL_II_DIR=<path/to/deal.II>```.
 - Call make. A simple call to ```make``` should suffice.
-- Run the code. This either achieved by calling ``` make run``` or ```./dynamic-muscle parameters.prm control_points_strain.dat control_points_activation.dat ```. A folder with the current timestamp will be created. This is where the results of your execution will be stored.
+- Run the code using any of the equivalent commands:
+```
+make run
+```
+or
+```
+./flexodeal-lite -PARAMETERS=parameters.prm -BDY_STRAIN=control_points_strain.dat -ACTIVATION=control_points_activation.dat
+```
+- Modify the values of `-PARAMETERS`, `-BDY_STRAIN`, or `-ACTIVATION` to use different parameter files, boundary strains, or activation profiles.
+- A folder with the current timestamp will be created. This is where the results will be stored. You can also store these results in a folder of your choice by including the `-OUTPUT_DIR` flag when running the code, for example:
+```
+./flexodeal-lite -OUTPUT_DIR=test_results
+```
 
 ## How long does it take to run?
 
