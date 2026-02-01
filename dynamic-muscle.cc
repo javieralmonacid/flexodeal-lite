@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------
  *
  * Flexodeal Lite
- * Copyright (C) 2024 Neuromuscular Mechanics Laboratory
+ * Copyright (C) 2026 Neuromuscular Mechanics Laboratory
  *
  * This file is part of the Flexodeal library
  *
@@ -14,15 +14,10 @@
  *
  * ---------------------------------------------------------------------
  * 
- * Author: Javier Almonacid
- *         PhD Candidate, Applied and Computational Mathematics
- *         Neuromuscular Mechanics Laboratory (NML)
- *         Simon Fraser University
- *         Spring 2024
- * 
  * This software has been created based on the "muscle code" developed by
  * members of the NML since 2014:
  * 
+ *         Javier A. Almonacid
  *         Harshil Pathak
  *         Ryan N. Konno
  *         Cassidy Tam
