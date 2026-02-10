@@ -10,7 +10,7 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 *.vtu
-dynamic-muscle
+flexodeal-lite
 temp_text.txt
 commit_text.txt
 commit_text.md

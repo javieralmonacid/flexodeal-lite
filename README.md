@@ -35,18 +35,32 @@ This coding framework has been used in the following studies:
 
 ## How to use it?
 
-- Make sure you have properly set up deal.II v9.3 (or newer) and its dependencies. For more information, visit [their website](http://www.dealii.org).
-- Get the latest release [here](https://github.com/sfu-nml/flexodeal-lite/releases). Alternatively, you can clone the repository for bleeding edge updates: ```git clone https://github.com/sfu-nml/flexodeal-lite.git```.
-- Navigate to the Flexodeal folder using ```cd```.
+- Make sure you have properly set up deal.II v9.5 (or newer) and its dependencies. For more information, visit [their website](http://www.dealii.org).
+- Get the latest release of Flexodeal Lite [here](https://github.com/sfu-nml/flexodeal-lite/releases). Alternatively, you can clone the repository to obtain the pre-release version: ```git clone https://github.com/sfu-nml/flexodeal-lite.git```.
+- Navigate to the Flexodeal Lite folder using ```cd```.
 - Call CMake:
     - In release mode: ```cmake . -DCMAKE_BUILD_TYPE=Release -DDEAL_II_DIR=<path/to/deal.II>```.
     - In debug mode: ```cmake . -DCMAKE_BUILD_TYPE=Debug -DDEAL_II_DIR=<path/to/deal.II>```.
 - Call make. A simple call to ```make``` should suffice.
-- Run the code. This either achieved by calling ``` make run``` or ```./dynamic-muscle parameters.prm control_points_strain.dat control_points_activation.dat ```. A folder with the current timestamp will be created. This is where the results of your execution will be stored.
+- Run the code using any of the equivalent commands:
+```
+make run
+```
+or
+```
+./flexodeal-lite -PARAMETERS=parameters.prm -BDY_STRAIN=control_points_strain.dat -ACTIVATION=control_points_activation.dat
+```
+- Modify the values of `-PARAMETERS`, `-BDY_STRAIN`, or `-ACTIVATION` to use different parameter files, boundary strains, or activation profiles.
+- A folder with the current timestamp will be created. This is where the results will be stored. You can also store these results in a folder of your choice by including the `-OUTPUT_DIR` flag when running the code, for example:
+```
+./flexodeal-lite -OUTPUT_DIR=test_results
+```
 
 ## How long does it take to run?
 
-In an Intel i5-9600K (3.70 GHz x 6) machine the code with its default settings (dynamic) takes about 4 minutes to complete 500 ms of simulation. In turn, the quasi-static code (`set Type of simulation = quasi-static`) takes only 18 seconds! That speaks volumes about the nonlinearity of the dynamic problem.
+- On an Intel i5-9600K (3.70 GHz x 6) machine, the code takes about 4.5 minutes to run the default simulation, which is dynamic. In turn, if you run the quasi-static version of the default experiment (which requires you to `set Type of simulation = quasi-static` in the parameters file), your simulation should be complete in about 2 minutes.
+
+- On a MacBook Air with an Apple M1 processor, the default experiment (dynamic) takes about 2.7 minutes, while the quasi-static version takes about 1.8 minutes.
 
 ## Binary files: what they are and how to read them
 
