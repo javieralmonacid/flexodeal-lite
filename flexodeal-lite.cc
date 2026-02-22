@@ -2116,14 +2116,14 @@ namespace Flexodeal
         solve_nonlinear_timestep(solution_delta);
         solution_n += solution_delta;
 
-        // ...and output the results (including VTU files) before moving on 
-        // happily to the next time step:
-        output_results();
-
         // If our computation is dynamic (rather than quasi-static),
         // then we have to update the "previous" variables. 
         if (parameters.type_of_simulation == "dynamic")
             update_timestep();
+
+        // Output the results (including VTU files) before moving on 
+        // happily to the next time step.
+        output_results();
 
         time.increment();
       }
@@ -4223,7 +4223,7 @@ namespace Flexodeal
       return void();
 
     // Create finite element
-    FE_Q<dim> fe_vel(parameters.poly_degree);
+    FE_Q<dim> fe_vel(degree);
     DoFHandler<dim> dof_handler_vel(triangulation);
     dof_handler_vel.distribute_dofs(fe_vel);
 
@@ -4256,12 +4256,54 @@ namespace Flexodeal
         velocity[i]
       );
 
+    // Copy projected components onto a vector field
+    FESystem<dim> fe_vel_vec(FE_Q<dim>(degree), dim);
+    DoFHandler<dim> dof_handler_vel_vec(triangulation);
+    dof_handler_vel_vec.distribute_dofs(fe_vel_vec);
+
+    Vector<double> velocity_vec(dof_handler_vel_vec.n_dofs());
+
+    std::vector<types::global_dof_index> dofs_scalar(fe_vel.dofs_per_cell);
+    std::vector<types::global_dof_index> dofs_vector(fe_vel_vec.dofs_per_cell);
+
+    for (const auto &cell : dof_handler_vel.active_cell_iterators())
+    {
+      const auto cell_vec =
+        typename DoFHandler<dim>::active_cell_iterator(
+          &triangulation,
+          cell->level(),
+          cell->index(),
+          &dof_handler_vel_vec);
+
+      cell->get_dof_indices(dofs_scalar);
+      cell_vec->get_dof_indices(dofs_vector);
+
+      // For FE_Q, local scalar dof index j corresponds to "index within component"
+      for (unsigned int j = 0; j < fe_vel.dofs_per_cell; ++j)
+        for (unsigned int c = 0; c < dim; ++c)
+        {
+          const unsigned int system_index =
+            fe_vel_vec.component_to_system_index(c, j); // (component, index-within-component)
+
+          velocity_vec[dofs_vector[system_index]] =
+            velocity[c][dofs_scalar[j]];
+        }
+    }
+
     // Export to VTK
     DataOut<dim> data_out;
-    data_out.attach_dof_handler(dof_handler_vel);
-    data_out.add_data_vector(velocity[0], "velocity_x");
-    data_out.add_data_vector(velocity[1], "velocity_y");
-    data_out.add_data_vector(velocity[2], "velocity_z");
+    data_out.attach_dof_handler(dof_handler_vel_vec);
+
+    std::vector<std::string> solution_names(dim, "velocity");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      interpretation(dim,
+        DataComponentInterpretation::component_is_part_of_vector);
+
+    data_out.add_data_vector(
+      velocity_vec,
+      solution_names,
+      DataOut<dim>::type_dof_data,
+      interpretation);
     
     Vector<double> soln(solution_n.size());
     for (unsigned int i = 0; i < soln.size(); ++i)
