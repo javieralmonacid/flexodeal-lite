@@ -18,6 +18,7 @@ commit_text.md
 results/
 2026*/
 *.zip
+*.DS_Store
 
 # Latex
 *.aux
