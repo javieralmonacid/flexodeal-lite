@@ -4389,13 +4389,63 @@ namespace Flexodeal
       }
     }
 
-    // Store values
+    /* ---------------------------------------------------
+    * Store values: build a multi-component DG output space
+    *   component 0: stretch (scalar)
+    *   components 1..dim: orientation (vector)
+    * --------------------------------------------------- */
+    FESystem<dim> fe_out(FE_DGQ<dim>(degree), 1 + dim);
+    DoFHandler<dim> dof_handler_out(triangulation);
+    dof_handler_out.distribute_dofs(fe_out);
+
+    Vector<double> out(dof_handler_out.n_dofs());
+
+    std::vector<types::global_dof_index> dofs_scalar(fe_stretch.dofs_per_cell);
+    std::vector<types::global_dof_index> dofs_out(fe_out.dofs_per_cell);
+
+    auto cell_scalar = dof_handler_stretch.begin_active();
+    auto cell_out    = dof_handler_out.begin_active();
+    const auto endc  = dof_handler_stretch.end();
+
+    for (; cell_scalar != endc; ++cell_scalar, ++cell_out)
+    {
+      cell_scalar->get_dof_indices(dofs_scalar);
+      cell_out->get_dof_indices(dofs_out);
+
+      for (unsigned int k = 0; k < fe_out.dofs_per_cell; ++k)
+      {
+        const auto comp_and_index = fe_out.system_to_component_index(k);
+        const unsigned int component              = comp_and_index.first;   // 0..dim
+        const unsigned int index_within_component = comp_and_index.second;  // 0..(FE_DGQ dofs_per_cell-1)
+
+        if (component == 0)
+          out[dofs_out[k]] = stretch[dofs_scalar[index_within_component]];
+        else
+        {
+          const unsigned int c = component - 1; // orientation component
+          out[dofs_out[k]] = orientation[c][dofs_scalar[index_within_component]];
+        }
+      }
+    }
+
     DataOut<dim> data_out;
-    data_out.attach_dof_handler(dof_handler_stretch);
-    data_out.add_data_vector(stretch, "stretch");
-    data_out.add_data_vector(orientation[0],"orientation_x");
-    data_out.add_data_vector(orientation[1],"orientation_y");
-    data_out.add_data_vector(orientation[2],"orientation_z");
+    data_out.attach_dof_handler(dof_handler_out);
+
+    std::vector<std::string> names(1 + dim);
+    names[0] = "stretch";
+    for (unsigned int c = 0; c < dim; ++c)
+      names[1 + c] = "orientation";
+
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+      interpretation(1 + dim);
+    interpretation[0] = DataComponentInterpretation::component_is_scalar;
+    for (unsigned int c = 0; c < dim; ++c)
+      interpretation[1 + c] = DataComponentInterpretation::component_is_part_of_vector;
+
+    data_out.add_data_vector(out,
+                            names,
+                            DataOut<dim>::type_dof_data,
+                            interpretation);
     
     Vector<double> soln(solution_n.size());
     for (unsigned int i = 0; i < soln.size(); ++i)
