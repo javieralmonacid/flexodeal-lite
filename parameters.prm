@@ -82,9 +82,9 @@ subsection Materials
   set Max strain rate = 5.0
 
   # Initial fibre orientation (must be a unit vector)
-  set Muscle x component = 0.86602540
+  set Muscle x component = 1.0
   set Muscle y component = 0.0
-  set Muscle z component = 0.50000000
+  set Muscle z component = 0.0
   
   # ----------- Base material properties ------------
 
@@ -127,7 +127,7 @@ subsection Time
   # End time [s]
   # To obtain data for the very last time step, add 1e-08 to
   # the desired end time
-  set End time       = 0.50000001
+  set End time       = 0.20000001
 
   # Time step size [s]
   set Time step size = 0.025

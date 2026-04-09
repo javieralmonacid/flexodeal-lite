@@ -727,7 +727,8 @@ namespace Flexodeal
     }
     double get_delta_t() const
     {
-      return delta_t;
+      //return delta_t;
+      return compute_delta_t();
     }
     unsigned int get_timestep() const
     {
@@ -736,11 +737,27 @@ namespace Flexodeal
     void increment()
     {
       time_previous = time_current;
-      time_current += delta_t;
+      //time_current += delta_t;
+      time_current += get_delta_t();
       ++timestep;
     }
 
   private:
+
+    double compute_delta_t() const
+    {
+      double delta_t_computed = 0.0;
+
+      if (time_current <= 0.1)
+        delta_t_computed = 0.1 / 4;
+      else if (time_current > 0.1 && time_current < 0.3)
+        delta_t_computed = 0.2 / 8;
+      else
+        delta_t_computed = delta_t;
+      
+      return delta_t_computed;
+    }
+
     unsigned int timestep;
     double       time_previous;
     double       time_current;
