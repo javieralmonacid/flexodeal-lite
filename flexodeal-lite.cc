@@ -749,9 +749,9 @@ namespace Flexodeal
       double delta_t_computed = 0.0;
 
       if (time_current <= 0.1)
-        delta_t_computed = 0.1 / 4;
+        delta_t_computed = 0.1 / 8.0;
       else if (time_current > 0.1 && time_current < 0.3)
-        delta_t_computed = 0.2 / 8;
+        delta_t_computed = 0.2 / 16.0;
       else
         delta_t_computed = delta_t;
       
