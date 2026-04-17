@@ -749,9 +749,9 @@ namespace Flexodeal
       double delta_t_computed = 0.0;
 
       if (time_current <= 0.1)
-        delta_t_computed = 0.1 / 8.0;
+        delta_t_computed = 0.025; // 0.1/4
       else if (time_current > 0.1 && time_current < 0.3)
-        delta_t_computed = 0.2 / 16.0;
+        delta_t_computed = 0.025; // 0.2/8
       else
         delta_t_computed = delta_t;
       
@@ -3569,7 +3569,7 @@ namespace Flexodeal
             boundary_id,
             Functions::ZeroFunction<dim>(n_components),
             constraints,
-            (fe.component_mask(x_displacement) | fe.component_mask(y_displacement) | fe.component_mask(z_displacement)));
+            fe.component_mask(x_displacement));
         }
 
         // Then, on the face we are pulling, we implement the incremental displacement 
@@ -3585,7 +3585,7 @@ namespace Flexodeal
             IncrementalDisplacement<dim>(
               u_dir(time.current())*parameters.length,u_dir(time.previous())*parameters.length),
             constraints,
-            (fe.component_mask(x_displacement) | fe.component_mask(y_displacement) | fe.component_mask(z_displacement)));
+            fe.component_mask(x_displacement));
         }
 
         // All other faces are traction-free, so no need for more lines of code here.

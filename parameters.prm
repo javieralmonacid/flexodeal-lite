@@ -6,7 +6,7 @@
 
 subsection Finite element system
   # Displacement system polynomial order
-  set Polynomial degree = 3
+  set Polynomial degree = 2
 
   # Gauss quadrature order
   set Quadrature order  = 5
@@ -18,7 +18,7 @@ end
 
 subsection Geometry
   # Global refinement level
-  set Global refinement   = 4
+  set Global refinement   = 3
 
    # Length of the muscle block [m]
   set Length = 0.03
@@ -130,7 +130,7 @@ subsection Time
   set End time       = 0.20000001
 
   # Time step size [s]
-  set Time step size = 0.0125
+  set Time step size = 0.025
 end
 
 
