@@ -6,7 +6,7 @@
 
 subsection Finite element system
   # Displacement system polynomial order
-  set Polynomial degree = 2
+  set Polynomial degree = 3
 
   # Gauss quadrature order
   set Quadrature order  = 5
@@ -168,6 +168,6 @@ end
 
 # Added from Matlab
 subsection Time
-  set End time = 0.70000001 
-  set Time step size = 2.50000000e-02 
+  set End time = 0.36666668 
+  set Time step size = 4.16666667e-03 
 end
