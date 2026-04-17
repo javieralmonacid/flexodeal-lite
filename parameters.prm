@@ -6,7 +6,7 @@
 
 subsection Finite element system
   # Displacement system polynomial order
-  set Polynomial degree = 2
+  set Polynomial degree = 3
 
   # Gauss quadrature order
   set Quadrature order  = 5
