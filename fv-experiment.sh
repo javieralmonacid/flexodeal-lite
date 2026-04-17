@@ -3,8 +3,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=24
-#SBATCH --mem=64GB
-#SBATCH --time=24:00:00
+#SBATCH --mem=32GB
+#SBATCH --time=02:00:00
 #SBATCH --output=fv-experiment-%A-%a.log
 #SBATCH --error=fv-experiment-%A-%a.err
 #SBATCH --array=0-22
