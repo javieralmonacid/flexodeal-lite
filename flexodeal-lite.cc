@@ -179,7 +179,6 @@ namespace Flexodeal
       double       width;
       double       height;
       double       scale;
-      double       p_p0;
 
       static void declare_parameters(ParameterHandler &prm);
 
@@ -212,10 +211,6 @@ namespace Flexodeal
                           Patterns::Double(0.0),
                           "Global grid scaling factor");
 
-        prm.declare_entry("Pressure ratio p/p0",
-                          "100",
-                          Patterns::Selection("0|20|40|60|80|100"),
-                          "Ratio of applied pressure to reference pressure");
       }
       prm.leave_subsection();
     }
@@ -229,7 +224,6 @@ namespace Flexodeal
         width             = prm.get_double("Width"); 
         height            = prm.get_double("Height");
         scale             = prm.get_double("Grid scale");
-        p_p0              = prm.get_double("Pressure ratio p/p0");
       }
       prm.leave_subsection();
     }
@@ -765,12 +759,9 @@ namespace Flexodeal
   class TabularFunction
   {
   public:
-    TabularFunction(const std::string filename, bool has_header = false)
+    TabularFunction(const std::string filename)
     {
-      if(has_header)
-        initialize_with_header(filename);
-      else
-        initialize(filename);
+      initialize(filename);
     }
 
     std::vector<double> operator()(const double t) const;
@@ -786,7 +777,6 @@ namespace Flexodeal
     std::vector<unsigned int> columns;
 
     void initialize(const std::string &filename);
-    void initialize_with_header(const std::string &filename);
   };
 
   // Read data (control points) and store them in values
@@ -802,50 +792,37 @@ namespace Flexodeal
     
     std::string line;
 
-    while(std::getline(infile, line))
+    std::getline(infile, line);
+    std::istringstream check_stream(line);
+
+    std::string first_token;
+    check_stream >> first_token;
+
+    bool has_header = (first_token[0] == '#');
+    if(has_header)
     {
-      std::istringstream iss(line);
+      std::istringstream header_stream(line);
 
-      double t;
-      iss >> t;
-      time.push_back(t);
+      std::string name;
 
-      double val;
-      std::vector<double> row;
+      header_stream >> name;
 
-      while(iss >> val)
-        row.push_back(val);
+      unsigned int col;
 
-      values.push_back(std::move(row));
+      while(header_stream >>col)
+        columns.push_back(col);
     }
-  }
-
-  void TabularFunction::initialize_with_header(const std::string &filename)
-  {
-    std::ifstream infile(filename);
-
-    // Raise an exception if file cannot be open (perhaps it does not
-    // even exist!).
-    if (infile.fail())
-      throw std::invalid_argument("Cannot open file: " + filename +  
-            ". Make sure the file exists and it has read permissions.");
-    
-    std::string line;
-    bool first_line = true;
+    else
+    {
+      infile.clear();
+      infile.seekg(0);
+    }
     while(std::getline(infile, line))
     {
-      std::istringstream iss(line);
-
-      if(first_line)
-      {
-        std::string name;
-        iss >> name;
-        while(iss >>name)
-          columns.push_back(std::stoul(name));
-        
-        first_line = false;
+      if(line.empty())
         continue;
-      }
+
+      std::istringstream iss(line);
 
       double t;
       iss >> t;
@@ -859,7 +836,6 @@ namespace Flexodeal
       values.push_back(std::move(row));
     }
   }
-
   // Evaluate the data:
   // - Interpolate if not found and t (independent variable) 
   //   is in data range
@@ -2029,7 +2005,7 @@ namespace Flexodeal
     , timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
     , u_dir(varargs.at("-BDY_STRAIN"))
     , activation_function(varargs.at("-ACTIVATION"))
-    , pressure_function(varargs.at("-PRESSURE"),true) //Boolean true for reading the boundary ids.
+    , pressure_function(varargs.at("-PRESSURE"))
     , degree(parameters.poly_degree)
     ,
     // The Finite Element System is composed of dim continuous displacement
