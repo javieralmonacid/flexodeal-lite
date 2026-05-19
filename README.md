@@ -48,7 +48,7 @@ make run
 ```
 or
 ```
-./flexodeal-lite -PARAMETERS=parameters.prm -BDY_STRAIN=control_points_strain.dat -ACTIVATION=control_points_activation.dat -PRESSURE=control_points.dat
+./flexodeal-lite -PARAMETERS=parameters.prm -BDY_STRAIN=control_points_strain.dat -ACTIVATION=control_points_activation.dat -PRESSURE=control_points_pressure.dat
 ```
 - Modify the values of `-PARAMETERS`, `-BDY_STRAIN`, `-ACTIVATION` or `-PRESSURE` to use different parameter files, boundary strains, activation profiles or pressure profiles.
 - A pressure file is used to apply pressure on the boundary as a boundary condition.
