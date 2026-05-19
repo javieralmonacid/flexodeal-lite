@@ -124,7 +124,7 @@ subsection Time
   # End time [s]
   # To obtain data for the very last time step, add 1e-08 to
   # the desired end time
-  set End time       = 1.50000001
+  set End time       = 0.50000001
 
   # Time step size [s]
   set Time step size = 0.025
