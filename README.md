@@ -48,9 +48,10 @@ make run
 ```
 or
 ```
-./flexodeal-lite -PARAMETERS=parameters.prm -BDY_STRAIN=control_points_strain.dat -ACTIVATION=control_points_activation.dat
+./flexodeal-lite -PARAMETERS=parameters.prm -BDY_STRAIN=control_points_strain.dat -ACTIVATION=control_points_activation.dat -PRESSURE=control_points.dat
 ```
-- Modify the values of `-PARAMETERS`, `-BDY_STRAIN`, or `-ACTIVATION` to use different parameter files, boundary strains, or activation profiles.
+- Modify the values of `-PARAMETERS`, `-BDY_STRAIN`, `-ACTIVATION` or `-PRESSURE` to use different parameter files, boundary strains, activation profiles or pressure profiles.
+- A pressure file is used to apply pressure on the boundary as a boundary condition.
 - A folder with the current timestamp will be created. This is where the results will be stored. You can also store these results in a folder of your choice by including the `-OUTPUT_DIR` flag when running the code, for example:
 ```
 ./flexodeal-lite -OUTPUT_DIR=test_results
