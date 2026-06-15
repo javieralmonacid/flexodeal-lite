@@ -22,6 +22,10 @@ macro(add_smoke_test NAME COMMAND_STR)
   )
 endmacro()
 
+add_smoke_test(DEFAULT
+  "${BINARY}"
+)
+
 add_smoke_test(IC
   "${BINARY} \
     -PARAMETERS=${ROOT}/examples/IC_parameters.prm \
