@@ -124,10 +124,10 @@ subsection Time
   # End time [s]
   # To obtain data for the very last time step, add 1e-08 to
   # the desired end time
-  set End time       = 0.50000001
+  set End time       = 1.00000001
 
   # Time step size [s]
-  set Time step size = 0.025
+  set Time step size = 0.05
 end
 
 
@@ -135,7 +135,7 @@ subsection Prescribed displacement
     # Even if you perform an isometric contraction it is important
     # to set this quantity properly as this is the place where
     # forces are computed for the force_data-3d.csv time series file.
-    set Pulling face ID  = 1
+    set Pulling face ID  = 0
 end
 
 
@@ -174,3 +174,4 @@ subsection Output binary files
     #          tau_muscle_base_1_1, tau_muscle_base_1_2, tau_muscle_base_1_3, tau_muscle_base_2_1, tau_muscle_base_2_2, tau_muscle_base_2_3, tau_muscle_base_3_1, tau_muscle_base_3_2, tau_muscle_base_3_3
     set Output binary files tensors = false
 end
+
