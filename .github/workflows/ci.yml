@@ -10,7 +10,7 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     container:
-      image: dealii/dealii:v9.5.2-focal
+      image: dealii/dealii:v9.7.1-noble
     steps:
       - uses: actions/checkout@v4
 
@@ -18,7 +18,7 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DDEAL_II_DIR=/usr/local
+            -DDEAL_II_DIR=/home/dealii/libs
 
       - name: Build
         run: cmake --build build --parallel $(nproc)
